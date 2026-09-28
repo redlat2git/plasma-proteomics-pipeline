@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import Iterable, Sequence, Any
 import json
 import os
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 import numpy as np
 import pandas as pd

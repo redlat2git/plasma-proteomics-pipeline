@@ -40,6 +40,13 @@ venv/
 PATCH_*
 RECOVER_HISTORICAL_*
 
-# OS
+# OS and IDE tooling
 .DS_Store
 Thumbs.db
+.jupyter-agent-bridge/
+.vscode/
+.idea/
+
+# Local draft documents and scratch
+*.pdf
+scratch/

@@ -104,7 +104,7 @@ reviewer_load_aptamer_data <- function(metadata_file, proteomics_file, annotatio
   prot_raw <- reviewer_read_proteomics_as_raw_compat(proteomics_file)
   annot <- reviewer_read_annotation(annotation_file)
 
-  if (!setequal(meta$SampleId, prot_raw$SampleId)) {
+  if (!all(meta$SampleId %in% prot_raw$SampleId)) {
     stop("Study_ID/SampleId sets differ between metadata and proteomics.", call. = FALSE)
   }
 

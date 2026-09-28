@@ -342,7 +342,7 @@ required_objects <- c(
 )
 
 missing_objects <- required_objects[
-  !vapply(required_objects, exists, logical(1))
+  !vapply(required_objects, function(x) exists(x, envir = environment()), logical(1))
 ]
 
 if (length(missing_objects) > 0) {

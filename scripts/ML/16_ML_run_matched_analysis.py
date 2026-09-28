@@ -8,6 +8,8 @@
 
 from pathlib import Path
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 _REPO_HINT = Path(__file__).resolve()
 for _candidate in [_REPO_HINT.parent, *_REPO_HINT.parents]:
@@ -20,44 +22,18 @@ sys.path.insert(0, str(PROJECT_ROOT / "python"))
 from redlat_ml.config import load_config, require_files
 CONFIG = load_config(__file__)
 
-# # Extended Data Figure 10 — v17 strict 80% recurrent panel
+# Extended Data Figure 10 — matched-cohort sensitivity analysis
 #
-# This version keeps the v15 Fig. 4-calibrated geometry but writes all final
-# artifacts to a short, direct folder under `configured ML project`, verifies
-# that each export exists and opens the folder automatically on Windows.
+# This script executes the propensity-score matched nested classification workflow,
+# evaluating both a newly reselected panel in the balanced cohort and the primary
+# seven-protein panel evaluated without feature reselection, alongside p-tau217
+# benchmarking and multivariable clinical regressions.
 
 # ============================================================
 # 0. DEPENDENCIES
 # ============================================================
 # Runtime dependencies are declared in environment/requirements.txt and
 # environment/environment.yml. This analysis script does not install packages.
-
-
-# ## Ubicación de salida de la v17
-#
-# Las figuras se guardan en:
-#
-# `<configured_project_root>\Extended_Data_Fig10_v17\figures`
-#
-# El notebook crea al inicio:
-#
-# `<configured_project_root>\WHERE_IS_EXTENDED_DATA_FIG10_v17.txt`
-#
-# Tras una exportación correcta crea `EXPORT_SUCCESSFUL.txt` y abre la carpeta
-# de figuras automáticamente.
-
-# ## Execution rule for v15
-#
-# Run `18A_matching_rebuild_and_audit_v5_SAVE_ML_PROJECT.R` first. Then open this
-# notebook and use **Kernel → Restart Kernel and Run All Cells**.
-#
-# Required matching file:
-#
-# `<configured_project_root>\Result_matching_rebuild_v5\matched_ids_SELECTED.csv`
-#
-# Panel c compares a newly selected matched nested model with the primary
-# seven-protein panel evaluated without feature reselection. Panel d and panel e
-# use the primary seven-protein panel.
 
 # ## Analytical distinction
 #
@@ -68,12 +44,11 @@ CONFIG = load_config(__file__)
 # external validation.
 
 # ============================================================
-# 1. IMPORTS AND USER CONFIGURATION
+# 1. IMPORTS AND CONFIGURATION
 # ============================================================
 
-NOTEBOOK_VERSION = "v17_STRICT80_SELECTED_MATCHED_PANEL"
 print("=" * 72)
-print("EXTENDED DATA FIG. 10 — NOTEBOOK VERSION:", NOTEBOOK_VERSION)
+print("EXTENDED DATA FIG. 10 — MATCHED COHORT ANALYSIS")
 print("matched source policy: audited matched_ids_SELECTED.csv only")
 print("figure policy: exact Fig. 4 page size; compact three-row layout")
 print("=" * 72)
@@ -207,10 +182,10 @@ TARGET_AD = 191
 STRICT_MANUSCRIPT_COUNTS = True
 
 # Set True only when you intentionally want to rerun expensive matched models.
-FORCE_RECOMPUTE_MATCHED = True
-FORCE_RECOMPUTE_FIXED_PANEL = True
-FORCE_RECOMPUTE_MATCHED_PTAU = True
-FORCE_RECOMPUTE_REGRESSION = True
+FORCE_RECOMPUTE_MATCHED = False
+FORCE_RECOMPUTE_FIXED_PANEL = False
+FORCE_RECOMPUTE_MATCHED_PTAU = False
+FORCE_RECOMPUTE_REGRESSION = False
 
 # Optional manual override. Leave as None to derive the matched panel from
 # cross-validation selection frequency.
@@ -404,20 +379,20 @@ print("Eligible proteins:", len(protein_cols))
 
 # ## Matching source policy
 #
-# Matching is treated as closed. The notebook accepts only the selected output
+# Matching is treated as closed. The workflow accepts only the selected output
 # from `Result_matching_rebuild_v5` and stops if it is not exactly 191 CN +
 # 191 AD.
 
 # ## 4. Audited selected matched cohort
 #
-# This cell reads only the `matched_ids_SELECTED.csv` produced by the final R
-# matching audit. It does not rerun propensity-score matching and does not search
-# for alternative matched files.
+# Reads only the `matched_ids_SELECTED.csv` produced by the authoritative R
+# matching audit (Script 15). It does not rerun propensity-score matching and
+# does not search for alternative matched files.
 
 # ============================================================
 # 4. AUTHORITATIVE SELECTED MATCHED COHORT
 # ============================================================
-# Matching has already been completed and audited in R. This notebook must
+# Matching has already been completed and audited in R. This script must
 # never rerun MatchIt or choose among alternative matched files.
 
 def _find_header_column(
@@ -1767,11 +1742,9 @@ else:
 
 
 # ------------------------------------------------------------
-# COMPATIBILITY PATCH FOR LEGACY MATCHED OUTPUTS
+# COMPATIBILITY CHECK FOR MATCHED OUTPUTS
 # ------------------------------------------------------------
-# Older versions of 18B wrote metrics_nestedCV.csv without a Model column.
-# The current figure notebook groups metrics by model, so reconstruct the
-# missing label deterministically for the protein-only matched analysis.
+# Ensure metrics DataFrame contains a Model column for downstream aggregation.
 if "Model" not in matched_results["metrics"].columns:
     matched_results["metrics"] = matched_results["metrics"].copy()
     matched_results["metrics"].insert(1, "Model", "Matched proteins")
@@ -2211,7 +2184,7 @@ def delong_pairwise(
 
     aucs, covariance = fast_delong(predictions, label_1_count)
     contrast = np.array([[1, -1]], dtype=float)
-    variance = float(contrast @ covariance @ contrast.T)
+    variance = float(np.squeeze(contrast @ covariance @ contrast.T))
     if variance <= 0 or not np.isfinite(variance):
         p_value = np.nan
         z_value = np.nan
@@ -2521,10 +2494,7 @@ def run_matched_ptau_models(
 
 matched = restore_matched_cohort_191()
 
-print(
-    "Running p-tau217 block under notebook policy:",
-    globals().get("NOTEBOOK_VERSION", "older kernel state"),
-)
+print("Running matched p-tau217 analysis block under validated configuration.")
 print(
     "Observed complete-case counts are accepted; "
     "158 CN + 157 AD is not a hard requirement."
@@ -3701,7 +3671,7 @@ manifest = {
         "random_state": RANDOM_STATE,
         "matching_seed": MATCHING_SEED,
         "exact_country": False,
-        "matching_performed_in_this_notebook": False,
+        "matching_performed_in_this_script": False,
         "primary_panel_feature_reselection": False,
         "matched_nested_feature_reselection": True,
         "match_caliper_sd": MATCH_CALIPER_SD,

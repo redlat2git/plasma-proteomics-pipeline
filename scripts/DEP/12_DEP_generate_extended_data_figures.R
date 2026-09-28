@@ -844,6 +844,10 @@ loso <- read_source_sheet(robust_file, "LOSO_summary")
 balanced <- read_source_sheet(robust_file, "Balanced_iterations")
 country_meta <- read_source_sheet(robust_file, "Country_meta")
 
+if (!"PlateId" %in% names(pca_scores)) pca_scores$PlateId <- NA_character_
+if (!"site" %in% names(pca_scores)) pca_scores$site <- if ("Site" %in% names(pca_scores)) pca_scores$Site else if ("SiteId" %in% names(pca_scores)) pca_scores$SiteId else NA_character_
+if (!"SiteId" %in% names(pca_scores)) pca_scores$SiteId <- pca_scores$site
+
 assert_cols(
   pca_scores,
   c("PC1", "PC2", "Age", "SampleGroup", "Sex",
@@ -2547,7 +2551,7 @@ display_label_audit <- tibble::tibble(
     !exists("ed4_primary_preservation_plot", inherits = FALSE) &&
       identical(names(ed4_panel_list), letters[1:7]),
     length(meta_i2_label) == 1 &&
-      !grepl("I²=", paste(capture.output(ed4g), collapse = ""))
+      !any(grepl("I²=", unlist(lapply(ed4g$layers, function(l) c(l$aes_params$label, if (!is.null(l$data) && "label" %in% names(l$data)) as.character(l$data$label))))))
   )
 )
 

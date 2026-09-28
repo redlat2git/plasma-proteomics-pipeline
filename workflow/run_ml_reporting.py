@@ -2,6 +2,7 @@ from pathlib import Path
 import os, subprocess, sys
 ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault("REDLAT_PROJECT_ROOT", str(ROOT))
+os.environ.setdefault("MPLBACKEND", "Agg")
 steps = [
     ROOT / "scripts/ML/25_ML_audit_strict_pipeline.py",
     ROOT / "scripts/ML/18_ML_plot_primary_results.py",

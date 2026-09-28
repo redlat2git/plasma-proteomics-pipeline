@@ -59,7 +59,20 @@ def load_config(script_file=None) -> Config:
 
 
 def require_files(*paths):
-    missing = [str(Path(p)) for p in paths if not Path(p).exists()]
+    resolved = []
+    for item in paths:
+        if isinstance(item, (list, tuple)) and not isinstance(item, Path):
+            if len(item) == 2 and isinstance(item[1], str) and isinstance(item[0], (str, Path)):
+                resolved.append(Path(item[0]))
+            else:
+                for sub in item:
+                    if isinstance(sub, (list, tuple)) and len(sub) >= 1:
+                        resolved.append(Path(sub[0]))
+                    else:
+                        resolved.append(Path(sub))
+        else:
+            resolved.append(Path(item))
+    missing = [str(p) for p in resolved if not p.exists()]
     if missing:
         raise FileNotFoundError("Missing required files:\n" + "\n".join(missing))
     return True

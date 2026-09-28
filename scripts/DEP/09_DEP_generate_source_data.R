@@ -429,6 +429,15 @@ pca_scores_tbl <- if (!is.na(pca_scores_path)) readr::read_csv(pca_scores_path, 
 pca_var_tbl <- if (!is.na(pca_var_path)) readr::read_csv(pca_var_path, show_col_types = FALSE) else if (exists("pca_var")) tibble::as_tibble(get("pca_var")) else NULL
 
 if (!is.null(pca_scores_tbl) && !is.null(pca_var_tbl)) {
+  if (!"PlateId" %in% names(pca_scores_tbl)) {
+    pca_scores_tbl$PlateId <- if ("Plate" %in% names(pca_scores_tbl)) pca_scores_tbl$Plate else NA_character_
+  }
+  if (!"site" %in% names(pca_scores_tbl)) {
+    pca_scores_tbl$site <- if ("Site" %in% names(pca_scores_tbl)) pca_scores_tbl$Site else if ("SiteId" %in% names(pca_scores_tbl)) pca_scores_tbl$SiteId else NA_character_
+  }
+  if (!"SiteId" %in% names(pca_scores_tbl)) {
+    pca_scores_tbl$SiteId <- pca_scores_tbl$site
+  }
   pca_keep <- c("PC1", "PC2", "PC3", "SampleGroup", "Sex", "Age", "APOE4_carrier", "PlateId", "Country", "site", "SiteId")
   pca_keep <- pca_keep[pca_keep %in% names(pca_scores_tbl)]
   pca_file <- save_source_workbook(
